@@ -1,0 +1,8 @@
+# node modules
+node_modules/
+
+npm-debug.log*
+# temp files
+temp
+
+# other files

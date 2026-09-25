@@ -1,0 +1,123 @@
+{
+  "orders": [
+    {
+      "customer": {
+        "name": "Arun Kumar",
+        "email": "arun@example.com",
+        "phone": "9876543210",
+        "address": "No 12, Anna Salai",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pincode": "600002"
+      },
+      "items": [
+        {
+          "name": "Minimalist Ceramic Cup",
+          "price": 499,
+          "sku": "CUP-01",
+          "weight": 0.5,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=320&auto=format&fit=crop",
+          "qty": 2
+        }
+      ],
+      "package": {
+        "weight": 1,
+        "length": 10,
+        "breadth": 10,
+        "height": 10
+      },
+      "shipping": {
+        "courier_name": "Shadowfox",
+        "courier_id": 3,
+        "rate": 45,
+        "etd": "2-3 Days"
+      },
+      "totalAmount": 1043,
+      "id": "GMB-8717",
+      "createdAt": "2026-08-24T08:58:03.279Z",
+      "status": "SHIPPED",
+      "shiprocket_order_id": "SR-835326",
+      "shipment_id": "SH-48791",
+      "awb_code": "MOCK-AWB-1787561898420"
+    },
+    {
+      "customer": {
+        "name": "Arun Kumar",
+        "email": "arun@example.com",
+        "phone": "9876543210",
+        "address": "No 12, Anna Salai",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pincode": "600002"
+      },
+      "items": [
+        {
+          "name": "Minimalist Ceramic Cup",
+          "price": 499,
+          "sku": "CUP-01",
+          "weight": 0.5,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=320&auto=format&fit=crop",
+          "qty": 2
+        }
+      ],
+      "package": {
+        "weight": 1,
+        "length": 10,
+        "breadth": 10,
+        "height": 10
+      },
+      "shipping": {
+        "courier_name": "Blue Dart Express",
+        "courier_id": 1,
+        "rate": 78,
+        "etd": "1-2 Days"
+      },
+      "totalAmount": 1076,
+      "id": "GMB-7498",
+      "createdAt": "2026-08-24T11:21:17.094Z",
+      "status": "SHIPPED",
+      "shiprocket_order_id": "SR-907977",
+      "shipment_id": "SH-67889",
+      "awb_code": "MOCK-AWB-1787570489041"
+    },
+    {
+      "customer": {
+        "name": "Arun Kumar",
+        "email": "arun@example.com",
+        "phone": "9876543210",
+        "address": "No 12, Anna Salai",
+        "city": "Chennai",
+        "state": "Tamil Nadu",
+        "pincode": "600002"
+      },
+      "items": [
+        {
+          "name": "Minimalist Ceramic Cup",
+          "price": 499,
+          "sku": "CUP-01",
+          "weight": 0.5,
+          "image": "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=320&auto=format&fit=crop",
+          "qty": 2
+        }
+      ],
+      "package": {
+        "weight": 1,
+        "length": 10,
+        "breadth": 10,
+        "height": 10
+      },
+      "shipping": {
+        "courier_name": "Amazon Shipping Surface 1kg",
+        "courier_id": 29,
+        "rate": 107.52,
+        "etd": "Sep 27, 2026"
+      },
+      "totalAmount": 1105.52,
+      "id": "GMB-5633",
+      "createdAt": "2026-09-25T10:31:53.205Z",
+      "status": "PROCESSING",
+      "shiprocket_order_id": 1611020918,
+      "shipment_id": 1607236120
+    }
+  ]
+}
