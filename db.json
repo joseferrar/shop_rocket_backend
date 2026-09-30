@@ -115,9 +115,64 @@
       "totalAmount": 1105.52,
       "id": "GMB-5633",
       "createdAt": "2026-09-25T10:31:53.205Z",
-      "status": "PROCESSING",
+      "status": "IN_TRANSIT",
       "shiprocket_order_id": 1611020918,
-      "shipment_id": 1607236120
+      "shipment_id": 1607236120,
+      "shipment_status": "IN TRANSIT",
+      "last_tracking_update": "2026-09-30T09:29:41.387Z",
+      "updated_via_webhook": true,
+      "tracking_scans": [
+        {
+          "date": "2026-09-30 14:00:00",
+          "location": "Chennai",
+          "activity": "In transit to destination hub",
+          "status": "In Transit"
+        }
+      ],
+      "awb_code": "1607236120"
+    }
+  ],
+  "webhook_logs": [
+    {
+      "id": "wh_1790760581388_jex5oi",
+      "receivedAt": "2026-09-30T09:29:41.388Z",
+      "type": "TRACKING_UPDATE",
+      "current_status": "IN TRANSIT",
+      "mapped_status": "IN_TRANSIT",
+      "awb": "1607236120",
+      "order_id": "GMB-5633",
+      "shipment_id": null,
+      "matched_order_id": "GMB-5633",
+      "courier_name": "Delhivery Surface",
+      "scans_count": 1,
+      "payload": {
+        "awb": "1607236120",
+        "order_id": "GMB-5633",
+        "current_status": "IN TRANSIT",
+        "courier_name": "Delhivery Surface",
+        "scans": [
+          {
+            "date": "2026-09-30 14:00:00",
+            "location": "Chennai",
+            "activity": "In transit to destination hub",
+            "status": "In Transit"
+          }
+        ]
+      }
+    },
+    {
+      "id": "wh_1790760581375_bn1cbi",
+      "receivedAt": "2026-09-30T09:29:41.375Z",
+      "type": "TEST_PING",
+      "current_status": "TEST_PING",
+      "mapped_status": "PROCESSING",
+      "awb": null,
+      "order_id": null,
+      "shipment_id": null,
+      "matched_order_id": null,
+      "courier_name": null,
+      "scans_count": 0,
+      "payload": {}
     }
   ]
 }

@@ -15,6 +15,13 @@ const config = {
     password: 'XeTY^Ud9eprPZC%@w19151n@&C%d*wwU',
     pickupPincode: '600116',
     pickupLocation: 'work'
+  },
+
+  // Webhook Settings
+  // Note: Shiprocket passes this in the 'x-api-key' request header.
+  webhook: {
+    secretToken: process.env.SHIPROCKET_WEBHOOK_TOKEN || 'whsec_gimbll_2026_track_key',
+    authHeader: 'x-api-key'
   }
 };
 

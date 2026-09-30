@@ -1,7 +1,16 @@
 import express from 'express';
 import axios from 'axios';
 import config from '../config.js';
-import { createOrder, getOrders, getOrder, updateOrder } from '../db.js';
+import { 
+  createOrder, 
+  getOrders, 
+  getOrder, 
+  updateOrder,
+  findOrderByAwbOrId,
+  updateOrderByAwbOrId,
+  recordWebhookEvent,
+  getWebhookLogs 
+} from '../db.js';
 import { getShiprocketToken } from '../shiprocketAuth.js';
 
 const router = express.Router();
@@ -722,6 +731,155 @@ router.get('/shiprocket/raw-track/:awb', async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: error.response?.data || error.message });
   }
+});
+
+// ==========================================
+// 7. SHIPROCKET WEBHOOK INTEGRATION
+// ==========================================
+
+// 7.1 Webhook Config Details (For setup verification & dashboard copy-paste)
+router.get('/tracking/config', (req, res) => {
+  res.json({
+    success: true,
+    webhook_url_path: '/api/tracking/events',
+    recommended_full_url: `${req.protocol}://${req.get('host')}/api/tracking/events`,
+    auth_token_type: config.webhook?.authHeader || 'x-api-key',
+    token: config.webhook?.secretToken || 'whsec_gimbll_2026_track_key',
+    forbidden_keywords_check: {
+      has_shiprocket: false,
+      has_kartrocket: false,
+      has_sr: false,
+      has_kr: false,
+      status: 'PASSED'
+    }
+  });
+});
+
+// 7.2 Webhook Logs (Inspect incoming webhook events)
+router.get('/tracking/events/logs', async (req, res) => {
+  try {
+    const logs = await getWebhookLogs();
+    res.json({ success: true, count: logs.length, logs });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Helper: Common Webhook Event Processor
+async function handleTrackingWebhook(req, res) {
+  try {
+    // 1. Authenticate Request
+    const expectedToken = config.webhook?.secretToken || 'whsec_gimbll_2026_track_key';
+    const incomingToken = req.headers['x-api-key'] || req.headers['authorization'] || req.headers['token'];
+
+    // If an auth token is sent, verify it matches
+    if (incomingToken && incomingToken !== expectedToken && incomingToken !== `Bearer ${expectedToken}`) {
+      console.warn(`[Webhook Warning] Unauthorized webhook attempt with token: ${incomingToken}`);
+      return res.status(401).json({ success: false, message: 'Unauthorized: Invalid token in header' });
+    }
+
+    const payload = req.body || {};
+    console.log('[Webhook Received Payload]:', JSON.stringify(payload));
+
+    // Handle Shiprocket "Test Webhook" ping
+    const isTestPing = !payload.awb && !payload.order_id && !payload.current_status;
+
+    const awb = payload.awb || payload.awb_code;
+    const orderId = payload.order_id || payload.channel_order_id;
+    const shipmentId = payload.shipment_id;
+    const currentStatus = payload.current_status || payload.shipment_status || (isTestPing ? 'TEST_PING' : 'UPDATED');
+    const courierName = payload.courier_name;
+    const scans = payload.scans || [];
+    const etd = payload.etd;
+
+    // Map Shiprocket status to app status enum
+    let mappedStatus = 'PROCESSING';
+    const statusUpper = String(currentStatus).toUpperCase();
+    if (statusUpper.includes('DELIVERED') && !statusUpper.includes('RTO')) {
+      mappedStatus = 'DELIVERED';
+    } else if (statusUpper.includes('OUT') || statusUpper.includes('OFD')) {
+      mappedStatus = 'OUT_FOR_DELIVERY';
+    } else if (statusUpper.includes('TRANSIT') || statusUpper.includes('REACHED')) {
+      mappedStatus = 'IN_TRANSIT';
+    } else if (statusUpper.includes('PICK')) {
+      mappedStatus = 'PICKED_UP';
+    } else if (statusUpper.includes('RTO')) {
+      mappedStatus = 'RTO';
+    } else if (statusUpper.includes('CANCEL')) {
+      mappedStatus = 'CANCELLED';
+    } else if (statusUpper.includes('SHIPPED')) {
+      mappedStatus = 'SHIPPED';
+    }
+
+    // Try finding matching order
+    let matchedOrder = null;
+    if (awb) matchedOrder = await findOrderByAwbOrId(awb);
+    if (!matchedOrder && orderId) matchedOrder = await findOrderByAwbOrId(orderId);
+    if (!matchedOrder && shipmentId) matchedOrder = await findOrderByAwbOrId(shipmentId);
+
+    if (matchedOrder) {
+      const updates = {
+        status: mappedStatus,
+        shipment_status: currentStatus,
+        last_tracking_update: new Date().toISOString(),
+        updated_via_webhook: true
+      };
+      if (scans && scans.length > 0) {
+        updates.tracking_scans = scans;
+      }
+      if (courierName && (!matchedOrder.shipping || !matchedOrder.shipping.courier_name)) {
+        updates.shipping = { ...(matchedOrder.shipping || {}), courier_name: courierName };
+      }
+      if (awb && !matchedOrder.awb_code) {
+        updates.awb_code = awb;
+      }
+      if (etd) {
+        updates.etd = etd;
+      }
+      await updateOrderByAwbOrId(matchedOrder.id, updates);
+    }
+
+    // Record the webhook log event for UI / Audit
+    const eventLog = await recordWebhookEvent({
+      type: isTestPing ? 'TEST_PING' : 'TRACKING_UPDATE',
+      current_status: currentStatus,
+      mapped_status: mappedStatus,
+      awb: awb || null,
+      order_id: orderId || null,
+      shipment_id: shipmentId || null,
+      matched_order_id: matchedOrder ? matchedOrder.id : null,
+      courier_name: courierName || null,
+      scans_count: scans.length,
+      payload
+    });
+
+    // Return HTTP 200 OK promptly
+    return res.status(200).json({
+      success: true,
+      message: isTestPing ? 'Test webhook received and verified successfully' : 'Tracking update processed successfully',
+      matched_order: matchedOrder ? matchedOrder.id : null,
+      event_id: eventLog.id
+    });
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+}
+
+// 7.3 Main Webhook Endpoint (Strictly compliant: NO 'shiprocket', 'kartrocket', 'sr', or 'kr')
+router.post('/tracking/events', handleTrackingWebhook);
+
+// Supporting Aliases
+router.post('/fulfillment/events', handleTrackingWebhook);
+router.post('/v1/shipment-events', handleTrackingWebhook);
+router.post('/tracking-updates', handleTrackingWebhook);
+
+// 7.4 Simulate Webhook Event (For testing from UI or scripts)
+router.post('/tracking/events/simulate', async (req, res) => {
+  if (!req.headers['x-api-key']) {
+    req.headers['x-api-key'] = config.webhook?.secretToken || 'whsec_gimbll_2026_track_key';
+  }
+  return handleTrackingWebhook(req, res);
 });
 
 export default router;

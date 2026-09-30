@@ -69,3 +69,56 @@ export async function getOrder(orderId) {
   const db = await readDb();
   return db.orders.find(o => o.id === orderId);
 }
+
+export async function findOrderByAwbOrId(identifier) {
+  if (!identifier) return null;
+  const db = await readDb();
+  const idStr = String(identifier).trim();
+  return db.orders.find(o => 
+    (o.awb_code && String(o.awb_code).trim() === idStr) ||
+    (o.id && String(o.id).trim() === idStr) ||
+    (o.shiprocket_order_id && String(o.shiprocket_order_id).trim() === idStr) ||
+    (o.shipment_id && String(o.shipment_id).trim() === idStr)
+  );
+}
+
+export async function updateOrderByAwbOrId(identifier, updates) {
+  if (!identifier) return null;
+  const db = await readDb();
+  const idStr = String(identifier).trim();
+  const index = db.orders.findIndex(o => 
+    (o.awb_code && String(o.awb_code).trim() === idStr) ||
+    (o.id && String(o.id).trim() === idStr) ||
+    (o.shiprocket_order_id && String(o.shiprocket_order_id).trim() === idStr) ||
+    (o.shipment_id && String(o.shipment_id).trim() === idStr)
+  );
+  if (index !== -1) {
+    db.orders[index] = { ...db.orders[index], ...updates };
+    await writeDb(db);
+    return db.orders[index];
+  }
+  return null;
+}
+
+export async function recordWebhookEvent(event) {
+  const db = await readDb();
+  if (!db.webhook_logs) {
+    db.webhook_logs = [];
+  }
+  const logEntry = {
+    id: `wh_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    receivedAt: new Date().toISOString(),
+    ...event
+  };
+  db.webhook_logs.unshift(logEntry);
+  if (db.webhook_logs.length > 50) {
+    db.webhook_logs = db.webhook_logs.slice(0, 50);
+  }
+  await writeDb(db);
+  return logEntry;
+}
+
+export async function getWebhookLogs() {
+  const db = await readDb();
+  return db.webhook_logs || [];
+}
